@@ -1,0 +1,19 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "emoji-forge",
+  "compatibility_date": "2026-10-03",
+
+  // O app é 100% estático — não há código de Worker, só os assets do `vite build`.
+  // A remoção de fundo, a codificação do GIF e tudo mais rodam no navegador.
+  //
+  // `single-page-application` responde qualquer caminho desconhecido com o
+  // `index.html`, sem acordar Worker nenhum (assets estáticos não são cobrados).
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  },
+
+  // Sem `routes`, o endereço é `emoji-forge.<subdomínio>.workers.dev`. Para usar
+  // um domínio próprio: "routes": [{ "pattern": "exemplo.com", "custom_domain": true }]
+  "workers_dev": true
+}

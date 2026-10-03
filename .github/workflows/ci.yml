@@ -1,0 +1,64 @@
+# Verificação a cada push e PR; publicação na Cloudflare quando a `main` anda.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Dois pushes seguidos na `main` não podem publicar fora de ordem: o segundo
+# cancela o primeiro, e o que fica no ar é o commit mais novo.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run typecheck
+
+      # Compilar aqui é o que impede um build quebrado de só aparecer na hora
+      # de publicar — e numa PR não há publicação para descobrir.
+      - run: npm run build
+
+      # O Workers recusa arquivos acima de 25 MiB. O `.wasm` do ONNX Runtime
+      # (~27 MB) é descartado no `vite.config.ts`; se uma atualização mudar o
+      # nome dele e ele voltar ao `dist`, o erro aparece aqui, não no deploy.
+      - name: Nenhum arquivo acima de 25 MiB
+        run: |
+          big=$(find dist -type f -size +25M)
+          if [ -n "$big" ]; then echo "Arquivos grandes demais para o Workers:"; echo "$big"; exit 1; fi
+
+  publicar:
+    needs: verificar
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      # Cada job começa numa máquina limpa; refazer o build (~1 s) é mais simples
+      # que carregar o `dist` de um job para o outro.
+      - run: npm run build
+
+      - uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          command: deploy
