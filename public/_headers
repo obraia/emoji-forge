@@ -2,9 +2,15 @@
 # (remoção de fundo em WASM) roda em uma thread só. `credentialless` em vez de
 # `require-corp` porque o modelo vem do Hugging Face e o runtime do jsDelivr:
 # `require-corp` bloquearia os dois.
+#
+# `Referrer-Policy: same-origin` não envia o Referer para outros domínios. O
+# Hugging Face responde 404 (sem CORS) a qualquer requisição cujo Referer seja
+# um `*.workers.dev` — e o download do modelo de remoção de fundo morria com
+# "Failed to fetch". Vale também para o Web Worker, que lê esta mesma regra.
 /*
   Cross-Origin-Opener-Policy: same-origin
   Cross-Origin-Embedder-Policy: credentialless
+  Referrer-Policy: same-origin
 
 # Os arquivos de /assets têm hash no nome: podem ficar em cache para sempre.
 /assets/*
