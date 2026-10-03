@@ -17,7 +17,7 @@ npm run deploy     # build + wrangler deploy (precisa de `npx wrangler login`)
 O app é estático e publicado como **Workers com assets estáticos** (`wrangler.jsonc`), sem código de Worker.
 
 - **CI** (`.github/workflows/ci.yml`): todo push e PR roda `typecheck` e `build`; push na `main` publica com `wrangler deploy`.
-- **Secret necessário** no repositório: `CLOUDFLARE_API_TOKEN` (template *Edit Cloudflare Workers* no painel da Cloudflare). Se o token tiver acesso a mais de uma conta, adicione também `CLOUDFLARE_ACCOUNT_ID`.
+- **Secret necessário** no repositório: `CLOUDFLARE_API_TOKEN` (template *Edit Cloudflare Workers* no painel da Cloudflare). Se o token tiver acesso a mais de uma conta, crie também o secret `CLOUDFLARE_ACCOUNT_ID` e passe `accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}` na `wrangler-action`.
 - **Cabeçalhos**: `public/_headers` envia COOP/COEP (WASM multi-thread) e cache longo para `/assets/*`.
 - **Limite de 25 MiB por arquivo**: o `.wasm` do ONNX Runtime (~27 MB) não vai para o `dist` — o transformers.js o carrega do jsDelivr. O plugin `drop-ort-wasm` no `vite.config.ts` remove a cópia, e o CI falha se algum arquivo acima de 25 MiB voltar a aparecer.
 
