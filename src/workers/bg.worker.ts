@@ -14,6 +14,10 @@ export type BgResponse =
 
 const scope = self as unknown as DedicatedWorkerGlobalScope;
 env.allowLocalModels = false;
+// O Hugging Face responde 404 sem CORS quando o Referer é um `*.workers.dev`. O `_headers` já define
+// `Referrer-Policy: same-origin`, mas um worker em cache pode ter vindo com os cabeçalhos antigos — então o
+// download dos modelos nunca envia Referer, independentemente de onde o app estiver hospedado.
+env.fetch = (input, init) => fetch(input, { ...init, referrerPolicy: 'no-referrer' });
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyModel = any;
